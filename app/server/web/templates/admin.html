@@ -1,0 +1,36 @@
+{{define "login-error"}}
+<div class="notice err">{{.Error}}</div>
+{{end}}
+
+{{define "admin"}}<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Панель управления — {{.Company}}</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:,">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body class="admin-body">
+  <div class="login-box">
+    <div class="login-brand">◆ {{.Company}}</div>
+    <h1>Вход в панель управления</h1>
+    <div id="login-result">
+      {{if .Error}}{{template "login-error" .}}{{end}}
+    </div>
+    <form hx-post="/admin/login" hx-target="#login-result" hx-swap="innerHTML"
+          hx-disabled-elt="button" method="post" action="/admin/login" autocomplete="off">
+      <label>Имя пользователя
+        <input type="text" name="username" required maxlength="100" autofocus>
+      </label>
+      <label>Пароль
+        <input type="password" name="password" required maxlength="100">
+      </label>
+      <button type="submit" class="btn">Войти</button>
+    </form>
+    <p class="login-foot muted">Доступ только для авторизованного персонала.</p>
+  </div>
+</body>
+</html>{{end}}

@@ -1,0 +1,13 @@
+# Example Caddy reverse-proxy config for dummypage.
+# Caddy gets/renews TLS automatically and sets X-Forwarded-For / X-Real-IP / X-Forwarded-Proto.
+# Run the app bound to localhost:  LISTEN_HOST=127.0.0.1 TRUST_PROXY=true ./dummypage --live
+
+example.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:8080
+}
+
+# Local testing without TLS:
+# http://localhost:8081 {
+#     reverse_proxy 127.0.0.1:8080
+# }

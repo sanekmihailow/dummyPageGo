@@ -1,0 +1,29 @@
+# Example systemd unit for running the binary behind nginx/apache/caddy.
+# Install:
+#   sudo cp dummypage /usr/local/bin/
+#   sudo cp deployments/dummypage.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now dummypage
+
+[Unit]
+Description=dummypage - lightweight decoy site
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/dummypage
+Environment=LISTEN_HOST=127.0.0.1
+Environment=LISTEN_PORT=8080
+Environment=TRUST_PROXY=true
+Environment=LIVE=true
+Environment=GOMEMLIMIT=16MiB
+Restart=on-failure
+RestartSec=2
+
+# hardening (the app needs nothing but the network)
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

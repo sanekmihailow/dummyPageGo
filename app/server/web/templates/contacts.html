@@ -1,0 +1,35 @@
+{{define "contact-ok"}}
+<div class="notice ok">Спасибо! Мы получили вашу заявку и свяжемся с вами в ближайшее время.</div>
+{{end}}
+
+{{define "content"}}
+<section class="page">
+  <h1>Контакты</h1>
+  <div class="contacts-grid">
+    <div class="contacts-info">
+      <p><strong>Адрес:</strong><br>123456, Москва, ул. Промышленная, д. 14, офис 320</p>
+      <p><strong>Телефон:</strong><br>+7 (495) 123-45-67</p>
+      <p><strong>E-mail:</strong><br>info@altair-systems.example</p>
+      <p><strong>Время работы:</strong><br>Пн–Пт, 9:00–18:00</p>
+    </div>
+    <div class="contacts-form">
+      <h2>Оставить заявку</h2>
+      <div id="contact-result">
+        {{if .Sent}}{{template "contact-ok" .}}{{end}}
+      </div>
+      <form hx-post="/contacts" hx-target="#contact-result" hx-swap="innerHTML" method="post" action="/contacts">
+        <label>Имя
+          <input type="text" name="name" required maxlength="100">
+        </label>
+        <label>E-mail
+          <input type="email" name="email" required maxlength="100">
+        </label>
+        <label>Сообщение
+          <textarea name="message" rows="4" maxlength="1000"></textarea>
+        </label>
+        <button type="submit" class="btn">Отправить</button>
+      </form>
+    </div>
+  </div>
+</section>
+{{end}}

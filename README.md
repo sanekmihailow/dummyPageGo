@@ -1,2 +1,99 @@
-# dummyPageGo
-Tiny server serving a convincing dummy site. No real backend, just the facade.Go 
+# dummypage
+
+A lightweight decoy site in Go + htmx. It mimics an ordinary corporate website and serves an
+`/admin` login form that **never** authenticates. No database, sessions, or state — a single
+static binary with embedded templates, CSS, and htmx. Uses around 8–12 MB RSS.
+
+By default the server shows an **"under development"** page for every request. The full site
+(home/about/services/contacts + `/admin`) is kept in the code and revealed with `--live`.
+
+Structure: `app/` layout, configuration via `go-flags`, logging via `go-pkgz/lgr`,
+routing via `go-pkgz/routegroup`, `revision` injected through ldflags.
+
+## Features
+
+- "Under development" page shown for every request by default (HTTP 503); the full site is
+  one flag away (`--live`).
+- Corporate site: `/`, `/about`, `/services`, `/contacts` with htmx navigation (`hx-boost`).
+- `/contacts` — a request form accepted over htmx (nothing is stored).
+- `/admin` — a login form that always returns "invalid username or password" after a short
+  delay (imitating a real check). No cookies or sessions are ever issued.
+- Optional logging of login attempts (IP, User-Agent, username, and optionally the password).
+- `Server: nginx` header so the binary does not reveal that it is written in Go.
+
+## Build and run
+
+```sh
+make build          # → ./dummypage
+./dummypage         # "under development" page on 0.0.0.0:8080
+./dummypage --live  # the full site instead
+make run            # go run with debug logging
+make test
+```
+
+## Configuration (flag or environment variable)
+
+| Flag | Env | Default | Description |
+|------|-----|---------|-------------|
+| `--host` | `LISTEN_HOST` | `0.0.0.0` | Host/IP to listen on (e.g. `127.0.0.1` behind nginx) |
+| `--port` | `LISTEN_PORT` | `8080` | Port to listen on |
+| `--live` | `LIVE` | `false` | Serve the full site instead of the under-development page |
+| `--no-log` | `NO_LOG` | `false` | Disable logging of `/admin` login attempts |
+| `--log-passwords` | `LOG_PASSWORDS` | `false` | Write the submitted password to the log (only if logging is on) |
+| `--trust-proxy` | `TRUST_PROXY` | `false` | Take client IP from `X-Real-IP` / `X-Forwarded-For` |
+| `--dbg` | `DEBUG` | `false` | Debug logging |
+
+Login attempts are logged by default; `--no-log` (or `NO_LOG=true`) turns that off.
+
+Examples:
+
+```sh
+# the under-development page (default)
+./dummypage
+
+# reveal the full corporate site + /admin
+./dummypage --live        # or: LIVE=true ./dummypage
+
+# full site, behind a reverse proxy, listen locally only
+LISTEN_HOST=127.0.0.1 TRUST_PROXY=true ./dummypage --live
+
+# full site but without logging login attempts
+./dummypage --live --no-log
+
+# log passwords too (for brute-force analysis)
+./dummypage --live --log-passwords
+```
+
+## Docker
+
+```sh
+docker build --build-arg REVISION=$(git rev-parse --short HEAD) -t dummypage .
+docker run --rm -p 8080:8080 dummypage
+```
+
+The image is built on `scratch` with `GOMEMLIMIT=16MiB` — minimal size and memory footprint.
+
+## Behind a reverse proxy
+
+The app is designed to run behind nginx / Caddy / Traefik / Apache: bind it to localhost and
+let the proxy terminate TLS. Set `--trust-proxy` (`TRUST_PROXY=true`) so login-attempt logs
+record the real client IP from `X-Real-IP` / `X-Forwarded-For`.
+
+```sh
+LISTEN_HOST=127.0.0.1 TRUST_PROXY=true ./dummypage --live
+```
+
+Ready-to-use examples live in [`deployments/`](deployments/):
+
+| File | Setup |
+|------|-------|
+| `nginx.conf` | nginx reverse proxy (HTTP + TLS variant) |
+| `Caddyfile` | Caddy with automatic HTTPS |
+| `apache.conf` | Apache `mod_proxy` |
+| `docker-compose.caddy.yml` | app + Caddy in Docker |
+| `docker-compose.traefik.yml` | app + Traefik (Let's Encrypt) in Docker |
+| `dummypage.service` | systemd unit (hardened) for the bare binary |
+
+Note: mount the app at the **root** of a domain/subdomain. Links are root-relative
+(`/static/…`, `/admin`), so serving it under a sub-path (e.g. `example.com/site/`) would need
+path rewriting on the proxy.

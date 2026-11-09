@@ -1,0 +1,36 @@
+{{define "layout"}}<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} — {{.Company}}</title>
+  <meta name="description" content="{{.Company}} — интеграция и сопровождение корпоративных ИТ-систем.">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:,">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body hx-boost="true">
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/">◆ {{.Company}}</a>
+      <nav class="nav">
+        <a href="/" class="{{if eq .Path "/"}}active{{end}}">Главная</a>
+        <a href="/about" class="{{if eq .Path "/about"}}active{{end}}">О компании</a>
+        <a href="/services" class="{{if eq .Path "/services"}}active{{end}}">Услуги</a>
+        <a href="/contacts" class="{{if eq .Path "/contacts"}}active{{end}}">Контакты</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap content">
+    {{template "content" .}}
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span>© {{.Year}} {{.Company}}. Все права защищены.</span>
+      <span class="muted">ИНН 7701234567 · Москва, ул. Промышленная, 14</span>
+    </div>
+  </footer>
+</body>
+</html>{{end}}

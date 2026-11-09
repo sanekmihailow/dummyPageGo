@@ -1,0 +1,19 @@
+{{define "maintenance"}}<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Сайт в разработке — {{.Company}}</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:,">
+</head>
+<body class="maintenance-body">
+  <div class="maintenance-box">
+    <div class="maintenance-mark">◆</div>
+    <h1>Сайт находится в разработке</h1>
+    <p class="lead">Мы готовим обновлённый сайт {{.Company}}. Пожалуйста, зайдите немного позже.</p>
+    <p class="muted">Спасибо за ваше терпение.</p>
+  </div>
+</body>
+</html>{{end}}
