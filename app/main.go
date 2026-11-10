@@ -23,6 +23,8 @@ var opts struct {
 	LogPasswords bool   `long:"log-passwords" env:"LOG_PASSWORDS" description:"include submitted passwords in attempt logs"`
 	TrustProxy   bool   `long:"trust-proxy" env:"TRUST_PROXY" description:"take client IP from X-Real-IP/X-Forwarded-For"`
 	Live         bool   `long:"live" env:"LIVE" description:"serve the full site instead of the under-development page"`
+	TLSCert      string `long:"tls-cert" env:"TLS_CERT" description:"path to TLS certificate (PEM); enables HTTPS together with --tls-key"`
+	TLSKey       string `long:"tls-key" env:"TLS_KEY" description:"path to TLS private key (PEM)"`
 	Dbg          bool   `long:"dbg" env:"DEBUG" description:"debug mode"`
 }
 
@@ -40,6 +42,10 @@ func main() {
 	setupLog(opts.Dbg)
 	log.Printf("[DEBUG] options: %+v", opts)
 
+	if (opts.TLSCert == "") != (opts.TLSKey == "") {
+		log.Fatalf("[ERROR] --tls-cert and --tls-key must be provided together")
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -50,6 +56,8 @@ func main() {
 		LogPasswords: opts.LogPasswords,
 		TrustProxy:   opts.TrustProxy,
 		Maintenance:  !opts.Live,
+		TLSCert:      opts.TLSCert,
+		TLSKey:       opts.TLSKey,
 		Version:      revision,
 	}
 	if err := srv.Run(ctx); err != nil {

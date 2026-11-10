@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"embed"
 	"errors"
 	"html/template"
@@ -33,6 +34,8 @@ type Server struct {
 	LogPasswords bool
 	TrustProxy   bool
 	Maintenance  bool
+	TLSCert      string // path to the TLS certificate (PEM); enables HTTPS together with TLSKey
+	TLSKey       string // path to the TLS private key (PEM)
 	Version      string
 
 	pages       map[string]*template.Template
@@ -46,6 +49,8 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 
+	tlsEnabled := s.TLSCert != "" && s.TLSKey != ""
+
 	addr := net.JoinHostPort(s.Host, strconv.Itoa(s.Port))
 	httpSrv := &http.Server{
 		Addr:              addr,
@@ -55,6 +60,9 @@ func (s *Server) Run(ctx context.Context) error {
 		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    8 << 10,
+	}
+	if tlsEnabled {
+		httpSrv.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 
 	go func() {
@@ -67,13 +75,25 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 	}()
 
-	if s.Maintenance {
-		log.Printf("[INFO] listening on %s (maintenance mode: under-development page for all requests)", addr)
-	} else {
-		log.Printf("[INFO] listening on %s (log-attempts:%v log-passwords:%v trust-proxy:%v)",
-			addr, s.LogAttempts, s.LogPasswords, s.TrustProxy)
+	scheme := "http"
+	if tlsEnabled {
+		scheme = "https"
 	}
-	if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if s.Maintenance {
+		log.Printf("[INFO] listening on %s://%s (maintenance mode: under-development page for all requests)", scheme, addr)
+	} else {
+		log.Printf("[INFO] listening on %s://%s (log-attempts:%v log-passwords:%v trust-proxy:%v)",
+			scheme, addr, s.LogAttempts, s.LogPasswords, s.TrustProxy)
+	}
+
+	// ListenAndServeTLS reads the cert/key files itself; empty paths mean plain HTTP.
+	var err error
+	if tlsEnabled {
+		err = httpSrv.ListenAndServeTLS(s.TLSCert, s.TLSKey)
+	} else {
+		err = httpSrv.ListenAndServe()
+	}
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil

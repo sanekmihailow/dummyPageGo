@@ -41,9 +41,15 @@ make test
 | `--no-log` | `NO_LOG` | `false` | Disable logging of `/admin` login attempts |
 | `--log-passwords` | `LOG_PASSWORDS` | `false` | Write the submitted password to the log (only if logging is on) |
 | `--trust-proxy` | `TRUST_PROXY` | `false` | Take client IP from `X-Real-IP` / `X-Forwarded-For` |
+| `--tls-cert` | `TLS_CERT` | — | Path to TLS certificate (PEM); enables HTTPS together with `--tls-key` |
+| `--tls-key` | `TLS_KEY` | — | Path to TLS private key (PEM) |
 | `--dbg` | `DEBUG` | `false` | Debug logging |
 
 Login attempts are logged by default; `--no-log` (or `NO_LOG=true`) turns that off.
+
+`--tls-cert` and `--tls-key` must be given together; when both are set the server speaks HTTPS
+directly (TLS 1.2+, HTTP/2 enabled) instead of plain HTTP. Without them it serves HTTP and is
+meant to sit behind a TLS-terminating proxy (see below).
 
 Examples:
 
@@ -62,7 +68,29 @@ LISTEN_HOST=127.0.0.1 TRUST_PROXY=true ./dummypage --live
 
 # log passwords too (for brute-force analysis)
 ./dummypage --live --log-passwords
+
+# serve HTTPS directly with your own certificate (no reverse proxy)
+./dummypage --live --port 443 --tls-cert /path/cert.pem --tls-key /path/key.pem
 ```
+
+### Native HTTPS
+
+Point `--tls-cert` / `--tls-key` at a PEM certificate and private key and the binary terminates
+TLS itself — no proxy required. The cert can come from Let's Encrypt (`certbot`), your own CA, or
+a self-signed pair for testing:
+
+```sh
+# self-signed cert for localhost (testing only)
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+  -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost" \
+  -addext "subjectAltName=IP:127.0.0.1"
+
+./dummypage --live --port 8443 --tls-cert cert.pem --tls-key key.pem
+# → https://127.0.0.1:8443/
+```
+
+For a public domain, prefer a reverse proxy (below) that renews certificates automatically, or
+feed the binary the proxy-managed cert/key paths.
 
 ## Docker
 
