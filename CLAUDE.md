@@ -54,6 +54,10 @@ expressed as **negative** flags that default false: `--live`/`LIVE` (show full s
 `--dbg`/`DEBUG`. When adding a default-true toggle, invert it the same way rather than relying
 on a `default:"true"` tag.
 
+`--tls-cert`/`TLS_CERT` + `--tls-key`/`TLS_KEY` enable native HTTPS: when both are set, `Run`
+uses `ListenAndServeTLS` with `tls.Config{MinVersion: TLS1.2}` instead of `ListenAndServe`;
+`main` rejects the pair unless both are provided. Empty = plain HTTP behind a proxy (the default).
+
 ## Conventions
 
 - Keep it dependency-light and stdlib-first; current deps (`go-flags`, `go-pkgz/lgr`,
